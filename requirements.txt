@@ -1,6 +1,5 @@
 streamlit
-tensorflow
+tensorflow==2.20.0
 numpy
 Pillow
 h5py
-protobuf
