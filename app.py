@@ -9,6 +9,11 @@ Original file is located at
 import streamlit as st
 import numpy as np
 from PIL import Image
+import os
+
+st.write("Current directory:", os.getcwd())
+st.write("Files:", os.listdir("."))
+
 
 try:
     from tflite_runtime.interpreter import Interpreter
