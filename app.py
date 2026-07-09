@@ -9,87 +9,46 @@ Original file is located at
 import streamlit as st
 import numpy as np
 from PIL import Image
-import os
+from tensorflow.keras.models import load_model
 
-st.write("Current directory:", os.getcwd())
-st.write("Files:", os.listdir("."))
+# Load trained model
+model = load_model("binary_image_classifier.keras")
 
-
-try:
-    from tflite_runtime.interpreter import Interpreter
-except ImportError:
-    st.error("tflite-runtime is not installed.")
-    st.stop()
+# Class labels
+classes = ["Female", "Male"]
 
 st.set_page_config(
-    page_title="Male & Female Image Classifier",
+    page_title="Gender Classification",
     page_icon="♂️♀️",
     layout="centered"
 )
 
-st.title("♂️♀️ Male & Female Image Classifier")
-st.write("Upload an image to predict whether it is **Male** or **Female**.")
-
-@st.cache_resource
-import os
-
-@st.cache_resource
-def load_model():
-    model_path = "binary_image_classifier_float16.tflite"
-
-    st.write("Current directory:", os.getcwd())
-    st.write("Files in directory:", os.listdir("."))
-
-    if not os.path.exists(model_path):
-        st.error(f"Model file not found: {model_path}")
-        st.stop()
-
-    try:
-        interpreter = Interpreter(model_path=model_path)
-        interpreter.allocate_tensors()
-        st.success("Model loaded successfully!")
-        return interpreter
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        st.stop()
-IMG_SIZE = (150, 150)
-
-def preprocess_image(img):
-    img = img.convert("RGB")
-    img = img.resize(IMG_SIZE)
-
-    img = np.array(img, dtype=np.float32)
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
-
-    return img
+st.title("♂️♀️ Gender Classification App")
+st.write("Upload an image to predict whether it is Male or Female.")
 
 uploaded_file = st.file_uploader(
-    "Upload Image",
+    "Choose an image",
     type=["jpg", "jpeg", "png"]
 )
 
 if uploaded_file is not None:
 
-    image = Image.open(uploaded_file)
+    image = Image.open(uploaded_file).convert("RGB")
 
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    input_data = preprocess_image(image)
+    img = image.resize((150,150))
+    img = np.array(img)/255.0
+    img = np.expand_dims(img, axis=0)
 
-    interpreter.set_tensor(input_details[0]["index"], input_data)
-    interpreter.invoke()
+    prediction = model.predict(img)
 
-    prediction = interpreter.get_tensor(output_details[0]["index"])
-
-    probability = float(prediction[0][0])
-
-    if probability >= 0.5:
-        label = "♂️ Male"
-        confidence = probability * 100
+    if prediction[0][0] > 0.5:
+        label = classes[1]
+        confidence = prediction[0][0]
     else:
-        label = "♀️ Female"
-        confidence = (1 - probability) * 100
+        label = classes[0]
+        confidence = 1-prediction[0][0]
 
-    st.success(f"Prediction: {label}")
-    st.info(f"Confidence: {confidence:.2f}%")
+    st.success(f"Prediction : {label}")
+    st.info(f"Confidence : {confidence*100:.2f}%")
