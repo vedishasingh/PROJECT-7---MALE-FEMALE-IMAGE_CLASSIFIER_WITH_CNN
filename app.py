@@ -31,16 +31,27 @@ st.title("♂️♀️ Male & Female Image Classifier")
 st.write("Upload an image to predict whether it is **Male** or **Female**.")
 
 @st.cache_resource
+import os
+
+@st.cache_resource
 def load_model():
-    interpreter = Interpreter(model_path="binary_image_classifier_float16.tflite")
-    interpreter.allocate_tensors()
-    return interpreter
+    model_path = "binary_image_classifier_float16.tflite"
 
-interpreter = load_model()
+    st.write("Current directory:", os.getcwd())
+    st.write("Files in directory:", os.listdir("."))
 
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+    if not os.path.exists(model_path):
+        st.error(f"Model file not found: {model_path}")
+        st.stop()
 
+    try:
+        interpreter = Interpreter(model_path=model_path)
+        interpreter.allocate_tensors()
+        st.success("Model loaded successfully!")
+        return interpreter
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.stop()
 IMG_SIZE = (150, 150)
 
 def preprocess_image(img):
